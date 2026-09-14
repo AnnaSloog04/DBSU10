@@ -1,0 +1,96 @@
+<html><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://oocsi.id.tue.nl/assets/images/OOCSI_logo_no_text.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" type="text/css" href="https://oocsi.id.tue.nl/assets/css/pico.indigo.min.css">
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/p5.min.js"></script>
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/p5.sound.min.js"></script>
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/oocsi-web.js"></script>
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/things/oocsi-things.min.js"></script>
+<style></style></head>
+<body>
+<script type="text/javascript">
+
+// define your teamspace
+  oocsiThingsConfig = {
+    teamspace: "team-5"
+  };
+
+  // define own shared data
+  let volume;
+
+  // define thing
+  function thing() {
+    oocsiThings.register('Voluma 📣', 'voluma', [], ['volume']);
+    volume = oocsiThings.data('volume');
+  }
+
+  // define internal data
+  let mic;
+  let micGestart = false;
+
+  function setup() {
+    let canvas = createCanvas(windowWidth, windowHeight);
+    canvas.parent('canvasContainer');
+    frameRate(10);
+
+    // Initialize microphone (nog niet starten)
+    mic = new p5.AudioIn();
+  }
+
+  function touchEnded() {
+    // Verplicht op mobiel: activeer audio context en start mic na een schermtik
+    userStartAudio();
+    if (!micGestart) {
+      mic.start();
+      micGestart = true;
+    }
+  }
+
+  function draw() {
+    background(0);
+
+    // Als de mic nog niet is gestart, toon een melding
+    if (!micGestart) {
+      fill(255);
+      textAlign(CENTER, CENTER);
+      textSize(20);
+      text("Tik op het scherm om de mic te starten", width / 2, height / 2);
+      return;
+    }
+
+    // Get current volume level
+    let vol = mic.getLevel();
+
+    // draw visualization
+    noStroke();
+    fill(255, map(vol, 0, 1, 255, 10));
+    ellipse(width/2, height/2, 
+        map(vol, 0, 1, 50, 10*min(width, height)), 
+        map(vol, 0, 1, 50, 10*min(width, height)));
+    fill(255, 20);
+    stroke(255);
+    ellipse(width/2, height/2, 
+        map(vol, 0, 1, 50, 20*min(width, height)), 
+        map(vol, 0, 1, 50, 20*min(width, height)));
+    noFill();
+    stroke(155);
+    ellipse(width/2, height/2, 
+        map(vol, 0, 1, 50, 30*min(width, height)), 
+        map(vol, 0, 1, 50, 30*min(width, height)));
+    stroke(55);
+    ellipse(width/2, height/2, 
+        map(vol, 0, 1, 50, 40*min(width, height)), 
+        map(vol, 0, 1, 50, 40*min(width, height)));
+
+    // update the data
+    volume(constrain(vol * 30, 0, 1));
+    oocsiThings.activity();
+  }
+
+</script>
+</body></html>
