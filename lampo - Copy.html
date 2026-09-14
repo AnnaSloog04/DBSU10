@@ -20,7 +20,7 @@
   };
 
   // thing variables
-  let toggle, dim, vol;
+  let toggle, dim, volume;
 
   // Interne logica voor geluid
   let geluidsOffset = 0;
@@ -28,19 +28,21 @@
 
   // define thing
   function thing() {
+    // 1. Registreer Lampo met 'volume' als input
     oocsiThings.register('Lampo 🪔', 'lampo', ['toggle', 'dim', 'volume'], ['toggle']);
 
     toggle = oocsiThings.data('toggle');
     toggle(true);
     
     dim = oocsiThings.data('dim');
-    dim(1.0); // Startstand: helder
+    dim(1.0);
 
-    vol = oocsiThings.data('volume');
+    // 2. Registreer de eigen variabele 'volume'
+    volume = oocsiThings.data('volume');
 
-    // Koppelingen
+    // 3. LET OP: 3e argument moet de STRING zijn ('volume' en 'dim')
     oocsiThings.connect('toktik', 'tick', 'dim');
-    oocsiThings.connect('voluma', 'volume', 'vol');
+    oocsiThings.connect('voluma', 'volume', 'volume');
   }
 
   function setup() {
@@ -51,31 +53,37 @@
   function draw() {
     background(0);
 
-    // 1. Veilige uitlezing (gebruik 1.0 als toktik nog niks gestuurd heeft)
+    // Uitlezen van de OOCSI-data
     let isAan = (typeof toggle === 'function' && toggle() !== undefined) ? toggle() : true;
     let huidigeDim = (typeof dim === 'function' && dim() !== undefined && dim() !== null) ? dim() : 1.0;
-    let huidigeVol = (typeof vol === 'function' && vol() !== undefined && vol() !== null) ? vol() : 0.0;
+    let huidigeVol = (typeof volume === 'function' && volume() !== undefined && volume() !== null) ? volume() : 0.0;
 
-    // 2. Geluidslogica (permanent stapje extra dimmen bij piek boven drempelwaarde)
-    let drempelwaarde = 0.5;
+    // Geluidslogica: bij hard geluid (boven 0.3) dimmen
+    let drempelwaarde = 0.3; // Iets gevoeliger ingesteld op 0.3
+
     if (huidigeVol > drempelwaarde) {
       if (!wasTeHard) {
-        geluidsOffset += 0.2;
+        geluidsOffset += 0.25; // Bij elke schreeuw/klap permanent 0.25 donkerder
         wasTeHard = true;
       }
     } else {
       wasTeHard = false;
     }
 
-    // 3. Combineer de dimwaarde van Toktik direct met de geluidsoffset
+    // Combineer Toktik-dimstand en Geluidsoffset
     let eindDim = constrain(huidigeDim - geluidsOffset, -1, 1);
 
-    // 4. Bereken helderheid en teken de lamp
+    // Bereken helderheid (0 = zwart, 255 = wit)
     let helderheid = isAan ? map(eindDim, -1, 1, 0, 255) : 50;
 
     noStroke();
     fill(helderheid);
     rect(50, 50, width - 100, height - 100);
+
+    // Visualiseer onderin het scherm de ontvangen volume-waarde voor debugging
+    fill(255);
+    textSize(14);
+    text("Ontvangen Volume: " + huidigeVol.toFixed(2), 60, height - 30);
   }
 
   function touchEnded() {
