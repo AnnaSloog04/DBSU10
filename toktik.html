@@ -14,52 +14,48 @@
 <body>
 <script type="text/javascript">
 
-  // define your teamspace
+// define your teamspace
   oocsiThingsConfig = {
-    // enter your team name, or leave empty for team selection dialog
     teamspace: "team-5"
   };
 
-  // thing variables
   let toggle, tick;
 
-  // define thing
   function thing() {
-
-    oocsiThings.register('Toktik ⏲️', 'toktik', ['toggle'], ['tick'])
-
-    // define own shared data
-    toggle = oocsiThings.data('toggle')
-    toggle(true)
-    tick = oocsiThings.data('tick')
+    oocsiThings.register('Toktik ⏲️', 'toktik', ['toggle'], ['tick']);
+    toggle = oocsiThings.data('toggle');
+    toggle(true);
+    tick = oocsiThings.data('tick');
   }
 
-  // define internal data
   let tickCount = 0;
 
   function setup() {
     let canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvasContainer');
 
-    background(0);
-    frameRate(1)
+    // Gebruik setInterval i.p.v. p5.js frameRate, zodat het op de achtergrond doorloopt
+    setInterval(runTick, 1000);
+  }
+
+  function runTick() {
+    if (typeof toggle === 'function' && toggle()) {
+      tickCount++;
+      if (typeof tick === 'function') {
+        tick(1 - tickCount * 0.003); // Stuur de tick-waarde door
+      }
+      if (typeof oocsiThings !== 'undefined') {
+        oocsiThings.activity();
+      }
+    }
   }
 
   function draw() {
-    // only advance if on
-    if(toggle()) { 
-      tickCount++;
-      tick(1-tickCount*0.003);
-    }
-
     background(0);      
-    translate(width/2, height/2)
-    rotate(radians(tickCount))
-    stroke(255, 200, 0)
-    line(0, 0, 0, -min(height, width)/3)
-
-oocsiThings.activity()
+    translate(width / 2, height / 2);
+    rotate(radians(tickCount));
+    stroke(255, 200, 0);
+    line(0, 0, 0, -min(height, width) / 3);
   }
-
 </script>
 </body></html>
