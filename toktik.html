@@ -34,23 +34,17 @@
     let canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvasContainer');
 
-    // Gebruik setInterval i.p.v. p5.js frameRate, zodat het op de achtergrond doorloopt
+    //Use setInterval to make sure it keeps running in the background instead of p5.js
     setInterval(runTick, 1000);
   }
 
   function runTick() {
-    if (typeof toggle === 'function' && toggle()) {
+    if(toggle()) { 
       tickCount++;
-      if (typeof tick === 'function') {
-        tick(1 - tickCount * 0.003); // Stuur de tick-waarde door
-      }
-      if (typeof oocsiThings !== 'undefined') {
-        oocsiThings.activity();
-      }
-    }
+      tick(1-tickCount*0.003); //To make sure the lampo dims over the timespan of 10 mins, we formulate tick to stay within -1 and 1 and make the increments very small
   }
 
-  function draw() {
+  function draw() { //the visualization of tick on the website
     background(0);      
     translate(width / 2, height / 2);
     rotate(radians(tickCount));
