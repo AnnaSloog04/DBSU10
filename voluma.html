@@ -31,14 +31,14 @@
 
   // define internal data
   let mic;
-  let micGestart = false;
+  let micStart = false;
 
   function setup() {
     let canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvasContainer');
     frameRate(10);
 
-    // Initialize microphone (nog niet starten)
+    // Initialize microphone (not started yet)
     mic = new p5.AudioIn();
   }
 // Variabele voor de wake lock
@@ -50,17 +50,17 @@
         wakeLock = await navigator.wakeLock.request('screen');
       }
     } catch (err) {
-      console.log("Wake Lock niet ondersteund of geweigerd");
+      console.log("Wake Lock not supported or refused");
     }
   }
 
   function touchEnded() {
     userStartAudio();
-    if (!micGestart) {
+    if (!micStart) {
       mic.start();
-      micGestart = true;
+      micStart = true;
       
-      // Voorkom dat het scherm uitgaat
+      // Prevent the screen from shutting off
       requestWakeLock();
     }
   }
@@ -68,12 +68,12 @@
   function draw() {
     background(0);
 
-    // Als de mic nog niet is gestart, toon een melding
-    if (!micGestart) {
+    // Show message if mic is not started yet
+    if (!micStart) {
       fill(255);
       textAlign(CENTER, CENTER);
       textSize(20);
-      text("Tik op het scherm om de mic te starten", width / 2, height / 2);
+      text("Tap screen to start recording", width / 2, height / 2);
       return;
     }
 
