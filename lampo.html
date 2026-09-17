@@ -63,7 +63,7 @@
 
     if (huidigeVol > drempelwaarde) {
       if (!wasTeHard) {
-        geluidsOffset += 0.02; // Bij elke schreeuw/klap permanent 0.25 donkerder
+        geluidsOffset += 0.02; // Bij elke schreeuw/klap permanent 0.02 donkerder
         wasTeHard = true;
       }
     } else {
@@ -71,19 +71,17 @@
     }
 
     // Combineer Toktik-dimstand en Geluidsoffset
-    let eindDim = constrain(huidigeDim - geluidsOffset, -1, 1);
-
-    // Bereken helderheid (0 = zwart, 255 = wit)
-    let helderheid = isAan ? map(eindDim, -1, 1, 0, 255) : 50;
+    let endDim = huidigeDim - geluidsOffset
 
     noStroke();
-    fill(helderheid);
+    fill(isAan ? map(eindDim, -1, 1, 0, 255) : 50);
     rect(50, 50, width - 100, height - 100);
 
     // Visualiseer onderin het scherm de ontvangen volume-waarde voor debugging
     fill(255);
     textSize(14);
     text("Ontvangen Volume: " + huidigeVol.toFixed(2), 60, height - 30);
+    text("Dim:" + endDim, 60, height - 30);
   }
 
   function touchEnded() {
