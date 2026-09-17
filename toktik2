@@ -1,0 +1,65 @@
+<html><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://oocsi.id.tue.nl/assets/images/OOCSI_logo_no_text.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" type="text/css" href="https://oocsi.id.tue.nl/assets/css/pico.indigo.min.css">
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/p5.min.js"></script>
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/oocsi-web.js"></script>
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/things/oocsi-things.min.js"></script>
+<style></style></head>
+<body>
+<script type="text/javascript">
+
+  // define your teamspace
+  oocsiThingsConfig = {
+    // enter your team name, or leave empty for team selection dialog
+    teamspace: "team-5"
+  };
+
+  // thing variables
+  let toggle, tick;
+
+  // define thing
+  function thing() {
+
+    oocsiThings.register('Toktik ⏲️', 'toktik', ['toggle'], ['tick'])
+
+    // define own shared data
+    toggle = oocsiThings.data('toggle')
+    toggle(true)
+    tick = oocsiThings.data('tick')
+  }
+
+  // define internal data
+  let tickCount = 0;
+
+  function setup() {
+    let canvas = createCanvas(windowWidth, windowHeight);
+    canvas.parent('canvasContainer');
+
+    background(0);
+    frameRate(1)
+  }
+
+  function draw() {
+    // only advance if on
+    if(toggle()) { 
+      tickCount++;
+      tick(1-tickCount*0.003);
+    }
+
+    background(0);      
+    translate(width/2, height/2)
+    rotate(radians(tickCount))
+    stroke(255, 200, 0)
+    line(0, 0, 0, -min(height, width)/3)
+
+oocsiThings.activity()
+  }
+
+</script>
+</body></html>
