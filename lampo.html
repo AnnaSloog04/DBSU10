@@ -75,13 +75,13 @@
 
     noStroke();
     fill(isAan ? map(endDim, -1, 1, 0, 255) : 50);
-    rect(50, 50, width - 100, height - 100);
+    circle(width / 2, height / 2, width - 100);
 
     // Visualiseer onderin het scherm de ontvangen volume-waarde voor debugging
-    fill(255);
-    textSize(14);
-    text("Ontvangen Volume: " + huidigeVol.toFixed(2), 60, height - 30);
-    text("Dim:" + endDim, 300, height - 30);
+    // fill(255);
+    // textSize(14);
+    // text("Ontvangen Volume: " + huidigeVol.toFixed(2), 60, height - 30);
+    // text("Dim:" + endDim, 300, height - 30);
   }
 
   function touchEnded() {
