@@ -23,13 +23,12 @@
   let toggle, dim, volume;
 
   // Interne logica voor geluid
-  let geluidsOffset = 0;
-  let wasTeHard = false;
+  let soundOffset = 0;
+  let TooLoud = false;
   let circleY = 500;
 
   // define thing
   function thing() {
-    // 1. Registreer Lampo met 'volume' als input
     oocsiThings.register('Lampo 🪔', 'lampo', ['toggle', 'dim', 'volume'], ['toggle']);
 
     toggle = oocsiThings.data('toggle');
@@ -37,11 +36,8 @@
     
     dim = oocsiThings.data('dim');
     dim(1.0);
-
-    // 2. Registreer de eigen variabele 'volume'
+    
     volume = oocsiThings.data('volume');
-
-    // 3. LET OP: 3e argument moet de STRING zijn ('volume' en 'dim')
     oocsiThings.connect('toktik', 'tick', 'dim');
     oocsiThings.connect('voluma', 'volume', 'volume');
   }
@@ -54,32 +50,32 @@
   function draw() {
     background(0);
 
-    // Uitlezen van de OOCSI-data
-    let isAan = (typeof toggle === 'function' && toggle() !== undefined) ? toggle() : true;
-    let huidigeDim = (typeof dim === 'function' && dim() !== undefined && dim() !== null) ? dim() : 1.0;
-    let huidigeVol = (typeof volume === 'function' && volume() !== undefined && volume() !== null) ? volume() : 0.0;
+    // Read OOCSI-data
+    let ON = (typeof toggle === 'function' && toggle() !== undefined) ? toggle() : true;
+    let currentDim = (typeof dim === 'function' && dim() !== undefined && dim() !== null) ? dim() : 1.0;
+    let currentVol = (typeof volume === 'function' && volume() !== undefined && volume() !== null) ? volume() : 0.0;
 
-    // Geluidslogica: bij hard geluid (boven 0.3) dimmen
-    let drempelwaarde = 0.3; // Iets gevoeliger ingesteld op 0.3
+    // Limit of dimming the lampo, 0.6 not very sensitive
+    let Limit = 0.6; 
 
-    if (huidigeVol > drempelwaarde) {
-      if (!wasTeHard) {
-        geluidsOffset += 0.02; // Bij elke schreeuw/klap permanent 0.02 donkerder
-        wasTeHard = true;
+    if (currentVol > Limit) {
+      if (!TooLoud) {
+        soundOffset += 0.02; //dims with this increment
+        TooLoud = true;
       }
     } else {
-      wasTeHard = false;
+      TooLoud = false;
     }
 
-    // Combineer Toktik-dimstand en Geluidsoffset
-    let endDim = huidigeDim - geluidsOffset
+    // Combine input from Toktik and Voluma
+    let endDim = currentDim - soundOffset
 
     noStroke();
-    fill(isAan ? map(endDim, -1, 1, 0, 255) : 50);
+    fill(ON ? map(endDim, -1, 1, 0, 255) : 50);
     circle(width / 2, circleY, height - 100);
     circleY += 0.01;
 
-    // Visualiseer onderin het scherm de ontvangen volume-waarde voor debugging
+    // Toktik and Voluma values for debugging
     // fill(255);
     // textSize(14);
     // text("Ontvangen Volume: " + huidigeVol.toFixed(2), 60, height - 30);
