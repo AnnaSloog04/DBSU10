@@ -25,6 +25,7 @@
   // Interne logica voor geluid
   let geluidsOffset = 0;
   let wasTeHard = false;
+  let circleY = height/2;
 
   // define thing
   function thing() {
@@ -75,7 +76,8 @@
 
     noStroke();
     fill(isAan ? map(endDim, -1, 1, 0, 255) : 50);
-    circle(width / 2, height / 2, width - 100);
+    circle(width / 2, circleY, height - 100);
+    circleY += 1;
 
     // Visualiseer onderin het scherm de ontvangen volume-waarde voor debugging
     // fill(255);
