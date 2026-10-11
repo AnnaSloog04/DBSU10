@@ -72,8 +72,20 @@
 
     noStroke();
     fill(ON ? map(endDim, -1, 1, 0, 255) : 50);
-    circle(width / 2, circleY, height - 100);
-    circleY += 0.05;
+    
+    // white circle that is stationary
+    circle(width / 2, height / 2, height - 100);
+
+    // Black circle moving over the white circle
+    let circleX = map(dim, 1, -1, -width, width * 2);
+    fill(0);
+    circle(circleX, height / 2, height - 100);
+    circleX += 0.05;
+    
+    // noStroke();
+    // fill(ON ? map(endDim, -1, 1, 0, 255) : 50);
+    // circle(width / 2, circleY, height - 100);
+    // circleY += 0.05;
 
     // Toktik and Voluma values for debugging
     // fill(255);
