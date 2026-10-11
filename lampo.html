@@ -77,10 +77,9 @@
     circle(width / 2, height / 2, height - 100);
 
     // Black circle moving over the white circle
-    let circleX = map(dim, 1, -1, -width, width * 2);
+    let circleX = map(dim, 1, -1, width/2-(height-100), width/2);
     fill(0);
     circle(circleX, height / 2, height - 100);
-    circleX += 0.05;
     
     // noStroke();
     // fill(ON ? map(endDim, -1, 1, 0, 255) : 50);
