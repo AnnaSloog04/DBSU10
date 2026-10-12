@@ -37,6 +37,8 @@
 
   // define internal data
   let capture;
+  let puzzleState = oocsiThings.data('puzzleState');
+  oocsiThings.connect('alligator', 'puzzleState');
 
   function setup() {
     let canvas = createCanvas(windowWidth, windowHeight);
