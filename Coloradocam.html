@@ -11,69 +11,178 @@
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/oocsi-web.js"></script>
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/things/oocsi-things.min.js"></script>
 <style></style></head>
-<body>
-  <script type="text/javascript">
-  // define your teamspace
-  oocsiThingsConfig = {
-    // enter your team name, or leave empty for team selection dialog
-    teamspace: "team-5"
-  };
+<script type="text/javascript">
+    // 1. OOCSI Teamspace configuratie
+    oocsiThingsConfig = {
+      teamspace: "team-5"
+    };
 
-  // thing variables
-  let brightness, colorR, colorG, colorB;
+    let brightnessVar, color_r_var, color_g_var, color_b_var;
 
-  // define thing
-  function thing() {
-    // register this thing with the name 'Colorado Cam 🤩' and data path 'coloradocam';
-    // no input, output is 'brightness' and 'color_r', 'color_g', 'color_b'
-    oocsiThings.register('Colorado Cam 🤩', 'coloradocam', ['toggle'], ['brightness', 'color_r', 'color_g', 'color_b'])
+    function thing() {
+      oocsiThings.register('Colorado Cam 🤩', 'coloradocam', ['toggle'], ['brightness', 'color_r', 'color_g', 'color_b']);
 
-    // define own shared data
-    brightness = oocsiThings.data('brightness')
-    color_r = oocsiThings.data('color_r')
-    color_g = oocsiThings.data('color_g')
-    color_b = oocsiThings.data('color_b')
-  }
+      brightnessVar = oocsiThings.data('brightness');
+      color_r_var = oocsiThings.data('color_r');
+      color_g_var = oocsiThings.data('color_g');
+      color_b_var = oocsiThings.data('color_b');
+    }
 
-  // define internal data
-  let capture;
-  let puzzleState = oocsiThings.data('puzzleState');
-  oocsiThings.connect('alligator', 'puzzleState');
+    // 2. Puzzel stappen (Volgorde: Groen -> Rood -> Blauw)
+    let puzzleSteps = [
+      { name: "Groen", targetHue: 130 },
+      { name: "Rood",  targetHue: 0 },
+      { name: "Blauw", targetHue: 240 }
+    ];
+    let currentStepIndex = 0;
 
-  function setup() {
-    let canvas = createCanvas(windowWidth, windowHeight);
-    canvas.parent('canvasContainer');
-    frameRate(10)
-    background(0);
-    
-    var options = {
-      audio: false,
-      video: {
-        facingMode: {
-          exact: "environment"
+    // Puzzel instellingen
+    let tolerance = 30;     
+    let hotZone = 50;       
+    let minSaturation = 0.15;
+    let minBrightness = 0.10;
+    let holdTime = 5000;    // 5 seconden vasthouden om door te gaan
+
+    let holdStart = 0;
+    let signalSent = false; 
+    let allCompleted = false;
+    let capture;
+
+    let hue = 0, saturation = 0, brightnessVal = 0;
+
+    function setup() {
+      let canvas = createCanvas(windowWidth, windowHeight);
+      canvas.parent('canvasContainer');
+      frameRate(10);
+      background(0);
+      
+      let options = {
+        audio: false,
+        video: { facingMode: { exact: "environment" } }
+      };
+      capture = createCapture(options);
+      capture.size(180, 100);
+      capture.hide();
+    }
+
+    function calculateHsv(r, g, b) {
+      let highest = Math.max(r, Math.max(g, b));
+      let lowest = Math.min(r, Math.min(g, b));
+      let diff = highest - lowest;
+
+      brightnessVal = highest;
+      saturation = (highest > 0) ? (diff / highest) : 0;
+
+      if (diff === 0) {
+        hue = 0;
+        return;
+      }
+
+      if (highest === r) hue = 60 * ((g - b) / diff);
+      else if (highest === g) hue = 60 * ((b - r) / diff + 2);
+      else hue = 60 * ((r - g) / diff + 4); // Opgelost: van 'green' naar 'g'
+
+      if (hue < 0) hue += 360;
+    }
+
+    function hueDistance(target) {
+      let d = Math.abs(hue - target);
+      if (d > 180) d = 360 - d;
+      return d;
+    }
+
+    function draw() {
+      background(0);
+      
+      image(capture, width/2 - 90, height/2 - 70, 180, 100);
+      loadPixels();
+      let col = get(width/2, height/2);
+      
+      fill(col);
+      ellipse(width/2, height/2 + 130, 60, 60);
+
+      let rNorm = red(col) / 255;
+      let gNorm = green(col) / 255;
+      let bNorm = blue(col) / 255;
+      let brightNorm = brightness(col) / 255;
+
+      if (typeof brightnessVar === 'function') {
+        brightnessVar(map(brightNorm, 0, 1, 0, 1));
+        color_r_var(rNorm);
+        color_g_var(gNorm);
+        color_b_var(bNorm);
+        oocsiThings.activity();
+      }
+
+      calculateHsv(rNorm, gNorm, bNorm);
+
+      let now = millis();
+      let currentGoal = puzzleSteps[currentStepIndex];
+      let distance = hueDistance(currentGoal.targetHue);
+
+      let puzzleState = "cold";
+
+      // 1. Bepaal de state
+      if (!allCompleted) {
+        if (saturation < minSaturation || brightnessVal < minBrightness) {
+          puzzleState = "cold";
+        } else if (distance <= tolerance) {
+          puzzleState = "hold";
+        } else if (distance <= hotZone) {
+          puzzleState = "hot";
+        } else {
+          puzzleState = "cold";
+        }
+
+        // 2. OOCSI Signaal versturen (HIGH als in de buurt, LOW als weggelopen)
+        if ((puzzleState === "hot" || puzzleState === "hold") && !signalSent) {
+          signalSent = true; 
+          OOCSI.newMessage(oocsiThingsConfig.teamspace);
+          OOCSI.addString("buttonstate", "HIGH");
+          OOCSI.sendMessage();
+        } 
+        else if (puzzleState === "cold" && signalSent) {
+          signalSent = false;
+          OOCSI.newMessage(oocsiThingsConfig.teamspace);
+          OOCSI.addString("buttonstate", "LOW");
+          OOCSI.sendMessage();
+        }
+
+        // 3. Hold timer & volgorde logica
+        if (puzzleState === "hold") {
+          if (holdStart === 0) holdStart = now; 
+          
+          if (now - holdStart >= holdTime) {
+            currentStepIndex++; // Volgende kleur
+            holdStart = 0;      
+            signalSent = false; // Reset zodat de volgende kleur weer een signaal stuurt
+
+            if (currentStepIndex >= puzzleSteps.length) {
+              allCompleted = true;
+            }
+          }
+        } else if (puzzleState === "cold") {
+          holdStart = 0; // Timer resetten als ze weglopen
         }
       }
-    };
-    capture = createCapture(options);
-    capture.size(180, 100);
-    capture.hide();
-  }
 
-  function draw() {
-    // visualize the color
-    image(capture, width/2 - 1, height/2 - 1, 3, 3);
-    loadPixels();
-    let color = get(width/2, height/2);
-    fill(color);
-    ellipse(width/2, height/2, 100, 100);
+      // 4. Visuele feedback op het scherm
+      fill(255);
+      textSize(20);
+      textAlign(CENTER);
 
-    // process data
-    brightness(map(brightness(color), 0, 255, 0, 1));
-    color_r(map(red(color), 0, 255, 0, 1));
-    color_g(map(green(color), 0, 255, 0, 1));
-    color_b(map(blue(color), 0, 255, 0, 1));
-    oocsiThings.activity();
-  }
-
-</script>
-</body></html>
+      if (!allCompleted) {
+        text("Find colour: " + currentGoal.name, width/2, height/2 + 45);
+        text("Status: " + puzzleState, width/2, height/2 + 75);
+        
+        if (holdStart !== 0) {
+          let elapsed = (now - holdStart) / 1000;
+          text("Hold: " + elapsed.toFixed(1) + "s / 5.0s", width/2, height/2 + 100);
+        }
+      } else {
+        fill(0, 255, 0);
+        textSize(24);
+        text("Puzzle solved", width/2, height/2 + 60);
+      }
+    }
+  </script></body></html>
