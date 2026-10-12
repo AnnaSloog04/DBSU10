@@ -73,24 +73,30 @@
     noStroke();
     fill(ON ? map(endDim, -1, 1, 0, 255) : 50);
     
-    // white circle that is stationary
-    circle(width / 2, height / 2, height - 100);
+    // Bepaal de diameter van de cirkels voor hergebruik
+    let diameter = height - 100;
 
-    // Black circle moving over the white circle
-    let circleX = map(currentDim, 1, -1, width/2-(height-100), width/2);
+    // --- LINKERHELF ---
+    // Vaste witte cirkel op de linkerhelft (width / 4)
+    fill(255);
+    circle(width / 4, height / 2, diameter);
+
+    // Zwarte cirkel die eroverheen beweegt op de linkerhelft
+    let circleX_L = map(currentDim, 1, -1, width / 4 - diameter, width / 4);
     fill(0);
-    circle(circleX, height / 2, height - 100);
-    
-    // noStroke();
-    // fill(ON ? map(endDim, -1, 1, 0, 255) : 50);
-    // circle(width / 2, circleY, height - 100);
-    // circleY += 0.05;
+    circle(circleX_L, height / 2, diameter);
 
-    // Toktik and Voluma values for debugging
-    // fill(255);
-    // textSize(14);
-    // text("Ontvangen Volume: " + huidigeVol.toFixed(2), 60, height - 30);
-    // text("Dim:" + endDim, 300, height - 30);
+
+    // --- RECHTERHELF ---
+    // Vaste witte cirkel op de rechterhelft (3 * width / 4)
+    fill(255);
+    circle((3 * width) / 4, height / 2, diameter);
+
+    // Zwarte cirkel die eroverheen beweegt op de rechterhelft
+    let circleX_R = map(currentDim, 1, -1, (3 * width) / 4 - diameter, (3 * width) / 4);
+    fill(0);
+    circle(circleX_R, height / 2, diameter);
+    
   }
 
   function touchEnded() {
