@@ -75,18 +75,7 @@
     
     // Bepaal de diameter van de cirkels voor hergebruik
     let diameter = height - 100;
-
-    // --- LINKERHELF ---
-    // Vaste witte cirkel op de linkerhelft (width / 4)
-    fill(255);
-    circle(width / 4, height / 2, diameter);
-
-    // Zwarte cirkel die eroverheen beweegt op de linkerhelft
-    let circleX_L = map(currentDim, 1, -1, width / 4 - diameter, width / 4);
-    fill(0);
-    circle(circleX_L, height / 2, diameter);
-
-
+    
     // --- RECHTERHELF ---
     // Vaste witte cirkel op de rechterhelft (3 * width / 4)
     fill(255);
@@ -96,6 +85,15 @@
     let circleX_R = map(currentDim, 1, -1, (3 * width) / 4 - diameter, (3 * width) / 4);
     fill(0);
     circle(circleX_R, height / 2, diameter);
+    // --- LINKERHELF ---
+    // Vaste witte cirkel op de linkerhelft (width / 4)
+    fill(255);
+    circle(width / 4, height / 2, diameter);
+
+    // Zwarte cirkel die eroverheen beweegt op de linkerhelft
+    let circleX_L = map(currentDim, 1, -1, width / 4 - diameter, width / 4);
+    fill(0);
+    circle(circleX_L, height / 2, diameter);
     
   }
 
