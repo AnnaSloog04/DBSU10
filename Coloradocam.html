@@ -167,22 +167,22 @@
       }
 
       // 4. Visuele feedback op het scherm
-      fill(255);
-      textSize(20);
-      textAlign(CENTER);
+      // fill(255);
+      // textSize(20);
+      // textAlign(CENTER);
 
-      if (!allCompleted) {
-        text("Find colour: " + currentGoal.name, width/2, height/2 + 45);
-        text("Status: " + puzzleState, width/2, height/2 + 75);
+      // if (!allCompleted) {
+      //   text("Find colour: " + currentGoal.name, width/2, height/2 + 45);
+      //   text("Status: " + puzzleState, width/2, height/2 + 75);
         
-        if (holdStart !== 0) {
-          let elapsed = (now - holdStart) / 1000;
-          text("Hold: " + elapsed.toFixed(1) + "s / 5.0s", width/2, height/2 + 100);
-        }
-      } else {
-        fill(0, 255, 0);
-        textSize(24);
-        text("Puzzle solved", width/2, height/2 + 60);
-      }
+      //   if (holdStart !== 0) {
+      //     let elapsed = (now - holdStart) / 1000;
+      //     text("Hold: " + elapsed.toFixed(1) + "s / 5.0s", width/2, height/2 + 100);
+      //   }
+      // } else {
+      //   fill(0, 255, 0);
+      //   textSize(24);
+      //   text("Puzzle solved", width/2, height/2 + 60);
+      // }
     }
   </script></body></html>
