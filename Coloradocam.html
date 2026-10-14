@@ -176,10 +176,27 @@
           let elapsed = (now - holdStart) / 1000;
           text("Hold: " + elapsed.toFixed(1) + "s / 5.0s", width/2, height/2 + 100);
         }
-      } else {
+        } else {
         fill(0, 255, 0);
         textSize(24);
-        text("Puzzle solved", width/2, height/2 + 60);
-      }
+        text("Puzzle solved!", width/2, height/2 + 60);
+        textSize(60);
+        text("H", width/2, height/2 - 100);
+        
+        // Optional: Keep it on screen for 5 seconds, then reset the puzzle
+        if (completionTime === 0) {
+          completionTime = now; // 'now' comes from millis() earlier in draw()
+        }
+        
+        let solvedElapsed = (now - completionTime) / 1000;
+        text("Restarting in: " + Math.max(0, (30 - solvedElapsed)).toFixed(1) + "s", width/2, height/2 + 95);
+
+        // After 5 seconds, reset the puzzle
+        if (solvedElapsed >= 30) {
+          currentStepIndex = 0;
+          allCompleted = false;
+          completionTime = 0;
+          signalSent = false;
+        }
     }
   </script></body></html>
