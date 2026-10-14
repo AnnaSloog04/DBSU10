@@ -10,7 +10,8 @@
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/p5.min.js"></script>
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/oocsi-web.js"></script>
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/things/oocsi-things.min.js"></script>
-<style></style></head>
+</head><body>
+  <div id="canvasContainer"></div>
 <script type="text/javascript">
     // 1. OOCSI Teamspace configuratie
     oocsiThingsConfig = {
@@ -80,7 +81,7 @@
 
       if (highest === r) hue = 60 * ((g - b) / diff);
       else if (highest === g) hue = 60 * ((b - r) / diff + 2);
-      else hue = 60 * ((r - g) / diff + 4); // Opgelost: van 'green' naar 'g'
+      else hue = 60 * ((r - g) / diff + 4); 
 
       if (hue < 0) hue += 360;
     }
