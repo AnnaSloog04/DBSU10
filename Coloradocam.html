@@ -137,13 +137,13 @@
         // 2. OOCSI Signaal versturen (HIGH als in de buurt, LOW als weggelopen)
         if ((puzzleState === "hot" || puzzleState === "hold") && !signalSent) {
           signalSent = true; 
-          OOCSI.newMessage(wristband_B);
+          OOCSI.newMessage("wristband_B");
           OOCSI.addInt("buttonstate", 1);
           OOCSI.sendMessage();
         } 
         else if (puzzleState === "cold" && signalSent) {
           signalSent = false;
-          OOCSI.newMessage(wristband_B);
+          OOCSI.newMessage("wristband_B");
           OOCSI.addInt("buttonstate", 0);
           OOCSI.sendMessage();
         }
