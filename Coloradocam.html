@@ -137,15 +137,11 @@
         // 2. OOCSI Signaal versturen (HIGH als in de buurt, LOW als weggelopen)
         if ((puzzleState === "hot" || puzzleState === "hold") && !signalSent) {
           signalSent = true; 
-          OOCSI.newMessage("wristband_B");
-          OOCSI.addInt("buttonstate", 1);
-          OOCSI.sendMessage();
+          OOCSI.send("wristband_B", { buttonstate: 1 });
         } 
         else if (puzzleState === "cold" && signalSent) {
           signalSent = false;
-          OOCSI.newMessage("wristband_B");
-          OOCSI.addInt("buttonstate", 0);
-          OOCSI.sendMessage();
+          OOCSI.send("wristband_B", { buttonstate: 0 });
         }
 
         // 3. Hold timer & volgorde logica
@@ -159,9 +155,7 @@
 
             if (currentStepIndex >= puzzleSteps.length) {
               allCompleted = true;
-              OOCSI.newMessage("fire");
-              OOCSI.addInt("activate", 1);
-              OOCSI.sendMessage();
+              OOCSI.send("fire", { activate: 1 });
             }
           }
         } else if (puzzleState === "cold") {
