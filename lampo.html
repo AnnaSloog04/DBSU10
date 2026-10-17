@@ -12,22 +12,29 @@
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/things/oocsi-things.min.js"></script>
 <style></style></head>
 <body>
+<div id="canvasContainer"></div>
 <script type="text/javascript">
 
-// define your teamspace
+  // Define your teamspace
   oocsiThingsConfig = {
     teamspace: "team-5"
   };
 
-  // thing variables
+  // Thing variables
   let toggle, dim, volume;
 
-  // Interne logica voor geluid
+  // Internal sound logic variables
   let soundOffset = 0;
   let TooLoud = false;
   let circleY = 350;
 
-  // define thing
+  // Game/Morse puzzle variables
+  let fireCompleted = false;
+  let collectedLetters = "";
+  let screenState = "normal"; // Can be "normal", "success", or "fail"
+  let failStartTime = 0;
+
+  // Define thing
   function thing() {
     oocsiThings.register('Lampo 🪔', 'lampo', ['toggle', 'dim', 'volume'], ['toggle']);
 
@@ -45,62 +52,119 @@
   function setup() {
     let canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvasContainer');
+
+    // --- OOCSI LISTENERS (Setup once) ---
+    
+    // Listen for the fire completion signal
+    OOCSI.subscribe("FIRE_CHANNEL", function(msg) {
+        if (msg.data.Fire_completed === true || msg.data.Fire_completed === "true") {
+            fireCompleted = true;
+            console.log("Fire completed! Ready for wristbands.");
+        }
+    });
+
+    // Listen for Morse code letters from wristbands channel
+    OOCSI.subscribe("wristbands", function(msg) {
+        // Only collect letters if fire is completed and we are in normal view
+        if (fireCompleted && screenState === "normal") {
+            let letter = msg.data.letter; // Expecting {"letter": "H"} from the sender
+            
+            if (letter) {
+                collectedLetters += letter.toUpperCase();
+                console.log("Collected letters: " + collectedLetters);
+
+                // Check combination length once it reaches 4 letters
+                if (collectedLetters.length >= 4) {
+                    if (collectedLetters === "HELP") {
+                        screenState = "success"; // Triggers green screen
+                    } else {
+                        screenState = "fail";    // Triggers red screen
+                        failStartTime = millis(); 
+                    }
+                }
+            }
+        }
+    });
   }
 
   function draw() {
-    background(0);
+    // --- 1. HANDLE SCREEN STATES (Success / Fail / Normal) ---
+    if (screenState === "success") {
+        background(0, 255, 0); // Bright Green
+        fill(0);
+        textSize(48);
+        textAlign(CENTER, CENTER);
+        text("SUCCESS! CORRECT CODE", width / 2, height / 2);
+        return; 
+    } 
+    else if (screenState === "fail") {
+        background(255, 0, 0); // Bright Red
+        fill(255);
+        textSize(48);
+        textAlign(CENTER, CENTER);
+        text("WRONG COMBINATION!", width / 2, height / 2);
 
-    // Read OOCSI-data
+        // Reset back to normal puzzle screen after 3 seconds (3000 ms)
+        if (millis() - failStartTime > 3000) {
+            screenState = "normal";
+            collectedLetters = ""; // Clear letters for retry
+        }
+        return;
+    } 
+    else {
+        background(0); // Normal dark background
+    }
+
+    // --- 2. OOCSI THING DATA LOGIC ---
     let ON = (typeof toggle === 'function' && toggle() !== undefined) ? toggle() : true;
     let currentDim = (typeof dim === 'function' && dim() !== undefined && dim() !== null) ? dim() : 1.0;
     let currentVol = (typeof volume === 'function' && volume() !== undefined && volume() !== null) ? volume() : 0.0;
 
-    // Limit of dimming the lampo, 0.6 not very sensitive
-    let Limit = 0.6; 
+    let Limit = 0.6;  
 
     if (currentVol > Limit) {
       if (!TooLoud) {
-        soundOffset += 0.02; //dims with this increment
+        soundOffset += 0.02; 
         TooLoud = true;
       }
     } else {
       TooLoud = false;
     }
 
-    // Combine input from Toktik and Voluma
     let endDim = currentDim - soundOffset
 
+    // --- 3. GRAPHICS  ---
     noStroke();
-   
-    // Bepaal de diameter van de cirkels voor hergebruik
     let diameter = height - 100;
     
-    // --- RECHTERHELF ---
-    // Vaste witte cirkel op de rechterhelft (3 * width / 4)
+    // RIGHT SIDE
     fill(255);
     circle((3 * width) / 4, height / 2, diameter);
 
-    // Zwarte cirkel die eroverheen beweegt op de rechterhelft
     let circleX_R = map(currentDim, 1, -1, (3 * width) / 4 - diameter, (3 * width) / 4);
     fill(0);
     circle(circleX_R, height / 2, diameter);
-    // --- LINKERHELF ---
-    // Vaste witte cirkel op de linkerhelft (width / 4)
+    
+    // LEFT SIDE
     fill(255);
     circle(width / 4, height / 2, diameter);
 
-    // Zwarte cirkel die eroverheen beweegt op de linkerhelft
     let circleX_L = map(currentDim, 1, -1, width / 4 - diameter, width / 4);
     fill(0);
     circle(circleX_L, height / 2, diameter);
-    
-  }
 
-  function touchEnded() {
-    if (typeof toggle === 'function') {
-      toggle(!toggle());
-      oocsiThings.activity();
+    // --- 4. DISPLAY MORSE LETTERS ON SCREEN ---
+    fill(255);
+    textSize(32);
+    textAlign(CENTER, TOP);
+    text("Morse Code: " + collectedLetters, width / 2, 30);
+    
+    if (!fireCompleted) {
+        textSize(16);
+        fill(150);
+        text("(Waiting for FIRE_CHANNEL completion...)", width / 2, 75);
     }
   }
+
 </script>
 </body></html>
