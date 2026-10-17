@@ -134,6 +134,7 @@
     let endDim = currentDim - soundOffset
 
     // --- 3. GRAPHICS  ---
+    if (!fireCompleted){
     noStroke();
     let diameter = height - 100;
     
@@ -154,17 +155,21 @@
     circle(circleX_L, height / 2, diameter);
 
     // --- 4. DISPLAY MORSE LETTERS ON SCREEN ---
+    }else{
+      noStroke();
+      let diameter = height - 150;
+      fill(255);
+      circle(width/2, height / 2, diameter);
+
+      let circleX_R = map(currentDim, 1, -1, width/2 - diameter, width/2);
+      fill(0);
+      circle(circleX_R, height / 2, diameter);
+      
     fill(255);
     textSize(32);
     textAlign(CENTER, TOP);
     text("Morse Code: " + collectedLetters, width / 2, 30);
-    
-    if (!fireCompleted) {
-        textSize(16);
-        fill(150);
-        text("(Waiting for FIRE_CHANNEL completion...)", width / 2, 75);
     }
   }
-
 </script>
 </body></html>
