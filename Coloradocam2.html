@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#020702">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://oocsi.id.tue.nl/assets/images/OOCSI_logo_no_text.png">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://oocsi.id.tue.nl/assets/js/p5.min.js"></script>
+  <script src="https://oocsi.id.tue.nl/assets/js/oocsi-web.js"></script>
+  <script src="https://oocsi.id.tue.nl/assets/js/things/oocsi-things.min.js"></script>
+
+  <style>
+    :root {
+      --nv-green: #aaff91;
+      --nv-bright: #70ff4e;
+      --nv-black: #020702;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: var(--nv-black);
+      color: var(--nv-green);
+      font-family: "Courier New", monospace;
+    }
+
+    #canvasContainer, canvas {
+      position: fixed;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Night-vision appearance is visual only; puzzle detection uses raw RGB. */
+    canvas {
+      filter: grayscale(1) sepia(1) hue-rotate(55deg) saturate(3)
+              contrast(1.4) brightness(0.82);
+    }
+
+    #nightvision {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(100, 255, 80, 0.045) 0px,
+          rgba(100, 255, 80, 0.045) 1px,
+          transparent 1px,
+          transparent 4px
+        ),
+        radial-gradient(
+          ellipse at center,
+          transparent 28%,
+          rgba(0, 12, 0, 0.42) 75%,
+          #000 115%
+        );
+      box-shadow: inset 0 0 100px rgba(22, 59, 12, 0.8);
+    }
+
+    #rgbPanel {
+      position: fixed;
+      z-index: 20;
+      right: clamp(14px, 5vw, 72px);
+      top: 50%;
+      transform: translateY(-50%);
+      width: 150px;
+      box-sizing: border-box;
+      padding: 10px 16px;
+      border: 1px solid var(--nv-bright);
+      background: rgba(0, 12, 0, 0.76);
+      box-shadow: 0 0 18px rgba(80, 255, 50, 0.16),
+                  inset 0 0 16px rgba(80, 255, 50, 0.05);
+      text-shadow: 0 0 8px rgba(93, 255, 67, 0.8);
+    }
+
+    .rgbRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 9px 0;
+      font-size: 19px;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid rgba(100, 255, 70, 0.18);
+    }
+
+    .rgbRow:last-child { border-bottom: none; }
+    .value { font-weight: bold; font-variant-numeric: tabular-nums; }
+
+    #reticle {
+      position: fixed;
+      z-index: 15;
+      left: 50%;
+      top: 50%;
+      width: clamp(110px, 19vw, 180px);
+      height: clamp(110px, 19vw, 180px);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .corner {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: var(--nv-green);
+      border-style: solid;
+      filter: drop-shadow(0 0 5px var(--nv-bright));
+    }
+
+    .tl { top: 0; left: 0; border-width: 3px 0 0 3px; }
+    .tr { top: 0; right: 0; border-width: 3px 3px 0 0; }
+    .bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; }
+    .br { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
+
+    #crosshair {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 22px;
+      height: 22px;
+      transform: translate(-50%, -50%);
+    }
+
+    #crosshair::before, #crosshair::after {
+      content: "";
+      position: absolute;
+      background: var(--nv-green);
+      box-shadow: 0 0 7px var(--nv-bright);
+    }
+
+    #crosshair::before { width: 22px; height: 2px; top: 10px; }
+    #crosshair::after { height: 22px; width: 2px; left: 10px; }
+
+    #solvedLetter {
+      display: none;
+      position: fixed;
+      z-index: 30;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--nv-green);
+      font-family: "Courier New", monospace;
+      font-size: clamp(180px, 35vw, 360px);
+      line-height: 1;
+      font-weight: bold;
+      text-shadow:
+        0 0 10px var(--nv-bright),
+        0 0 30px var(--nv-bright),
+        0 0 70px rgba(112, 255, 78, 0.7);
+      pointer-events: none;
+    }
+
+    @media (max-width: 600px) {
+      #rgbPanel {
+        right: 12px;
+        top: auto;
+        bottom: 18px;
+        transform: none;
+        width: 118px;
+        padding: 6px 10px;
+      }
+      .rgbRow { font-size: 15px; padding: 7px 0; }
+      .corner { width: 20px; height: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="canvasContainer"></div>
+  <div id="nightvision" aria-hidden="true"></div>
+
+  <div id="reticle" aria-hidden="true">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div id="crosshair"></div>
+  </div>
+
+  <div id="solvedLetter" aria-label="Puzzle letter">L</div>
+
+  <div id="rgbPanel" aria-label="Live normalized RGB camera values">
+    <div class="rgbRow"><span>R</span><span class="value" id="rgbR">0.00</span></div>
+    <div class="rgbRow"><span>G</span><span class="value" id="rgbG">0.00</span></div>
+    <div class="rgbRow"><span>B</span><span class="value" id="rgbB">0.00</span></div>
+  </div>
+
+  <script>
+    // OOCSI Teamspace configuration
+    oocsiThingsConfig = { teamspace: "team-5" };
+
+    let brightnessVar, color_r_var, color_g_var, color_b_var;
+
+    function thing() {
+      oocsiThings.register(
+        "Colorado Cam 🤩",
+        "coloradocam",
+        ["toggle"],
+        ["brightness", "color_r", "color_g", "color_b"]
+      );
+
+      brightnessVar = oocsiThings.data("brightness");
+      color_r_var = oocsiThings.data("color_r");
+      color_g_var = oocsiThings.data("color_g");
+      color_b_var = oocsiThings.data("color_b");
+    }
+
+    // Puzzle order: green -> red -> blue
+    const puzzleSteps = [
+      { name: "Groen", targetHue: 130 },
+      { name: "Rood", targetHue: 0 },
+      { name: "Blauw", targetHue: 240 }
+    ];
+    let currentStepIndex = 0;
+
+    const tolerance = 30;
+    const hotZone = 50;
+    const minSaturation = 0.15;
+    const minBrightness = 0.10;
+    const holdTime = 3000; // Require 3 seconds on each target colour
+
+    let holdStart = 0;
+    let signalSent = false;
+    let allCompleted = false;
+    let completionTime = 0;
+    let capture;
+    let sampleBuffer;
+
+    let hue = 0;
+    let saturation = 0;
+    let brightnessVal = 0;
+
+    function setup() {
+      const canvas = createCanvas(windowWidth, windowHeight);
+      canvas.parent("canvasContainer");
+      pixelDensity(1);
+      frameRate(10);
+      background(0);
+
+      capture = createCapture({
+        audio: false,
+        video: { facingMode: { ideal: "environment" } }
+      });
+      capture.size(640, 480);
+      capture.hide();
+
+      if (typeof oocsiThings !== "undefined" &&
+          typeof oocsiThings.register === "function") {
+        thing();
+      }
+    }
+
+    function calculateHsv(r, g, b) {
+      const highest = Math.max(r, g, b);
+      const lowest = Math.min(r, g, b);
+      const diff = highest - lowest;
+
+      brightnessVal = highest;
+      saturation = highest > 0 ? diff / highest : 0;
+
+      if (diff === 0) {
+        hue = 0;
+        return;
+      }
+
+      if (highest === r) hue = 60 * ((g - b) / diff);
+      else if (highest === g) hue = 60 * ((b - r) / diff + 2);
+      else hue = 60 * ((r - g) / diff + 4);
+
+      if (hue < 0) hue += 360;
+    }
+
+    function hueDistance(target) {
+      const d = Math.abs(hue - target);
+      return d > 180 ? 360 - d : d;
+    }
+
+    function sendWristbandState(state) {
+      if (typeof OOCSI !== "undefined" && typeof OOCSI.send === "function") {
+        OOCSI.send("wristband_B", {
+          buttonstate: state,
+          sender: "camera_puzzle"
+        });
+      }
+    }
+
+    function completePuzzle(now) {
+      allCompleted = true;
+      completionTime = now;
+      document.getElementById("solvedLetter").style.display = "block";
+      document.getElementById("reticle").style.display = "none";
+
+      // Start Fire 1 using the same OOCSI.send() method as the wristband.
+      // The ESP subscribes to "team-5" and checks activeFire == 1.
+      if (typeof OOCSI !== "undefined" && typeof OOCSI.send === "function") {
+        OOCSI.send("team-5", { activeFire: 1 });
+        console.log("Sent activeFire = 1 to team-5");
+
+      } else {
+        console.error("OOCSI.send is unavailable; fire and letter were not sent.");
+      }
+    }
+
+    function draw() {
+      background(0);
+
+      if (!capture || !capture.elt || capture.elt.readyState < 2) return;
+
+      const videoWidth = capture.elt.videoWidth || capture.width;
+      const videoHeight = capture.elt.videoHeight || capture.height;
+      const scale = Math.max(width / videoWidth, height / videoHeight);
+      const drawWidth = videoWidth * scale;
+      const drawHeight = videoHeight * scale;
+      const drawX = (width - drawWidth) / 2;
+      const drawY = (height - drawHeight) / 2;
+
+      image(capture, drawX, drawY, drawWidth, drawHeight);
+
+      // Find the source-video pixel currently under the centre reticle.
+      const sampleX = Math.max(0, Math.min(videoWidth - 1,
+        Math.floor((width / 2 - drawX) / scale)));
+      const sampleY = Math.max(0, Math.min(videoHeight - 1,
+        Math.floor((height / 2 - drawY) / scale)));
+
+      if (!sampleBuffer ||
+          sampleBuffer.width !== videoWidth ||
+          sampleBuffer.height !== videoHeight) {
+        if (sampleBuffer) sampleBuffer.remove();
+        sampleBuffer = createGraphics(videoWidth, videoHeight);
+        sampleBuffer.pixelDensity(1);
+      }
+
+      sampleBuffer.image(capture, 0, 0, videoWidth, videoHeight);
+      sampleBuffer.loadPixels();
+
+      const idx = 4 * (sampleY * videoWidth + sampleX);
+      const px = sampleBuffer.pixels;
+      const rNorm = (px[idx] || 0) / 255;
+      const gNorm = (px[idx + 1] || 0) / 255;
+      const bNorm = (px[idx + 2] || 0) / 255;
+      const brightNorm = Math.max(rNorm, gNorm, bNorm);
+
+      document.getElementById("rgbR").textContent = rNorm.toFixed(2);
+      document.getElementById("rgbG").textContent = gNorm.toFixed(2);
+      document.getElementById("rgbB").textContent = bNorm.toFixed(2);
+
+      if (typeof brightnessVar === "function") {
+        brightnessVar(brightNorm);
+        color_r_var(rNorm);
+        color_g_var(gNorm);
+        color_b_var(bNorm);
+        if (typeof oocsiThings.activity === "function") oocsiThings.activity();
+      }
+
+      calculateHsv(rNorm, gNorm, bNorm);
+
+      const now = millis();
+
+      if (!allCompleted && currentStepIndex < puzzleSteps.length) {
+        const goal = puzzleSteps[currentStepIndex];
+        const distance = hueDistance(goal.targetHue);
+        let puzzleState = "cold";
+
+        if (saturation < minSaturation || brightnessVal < minBrightness) {
+          puzzleState = "cold";
+        } else if (distance <= tolerance) {
+          puzzleState = "hold";
+        } else if (distance <= hotZone) {
+          puzzleState = "hot";
+        }
+
+        // Keep the existing wristband signal behaviour.
+        if ((puzzleState === "hot" || puzzleState === "hold") && !signalSent) {
+          signalSent = true;
+          sendWristbandState(1);
+        } else if (puzzleState === "cold" && signalSent) {
+          signalSent = false;
+          sendWristbandState(0);
+        }
+
+        // The target must remain in the exact hold zone continuously for 5 seconds.
+        if (puzzleState === "hold") {
+          if (holdStart === 0) holdStart = now;
+
+          if (now - holdStart >= holdTime) {
+            currentStepIndex++;
+            holdStart = 0;
+
+            if (signalSent) {
+              signalSent = false;
+              sendWristbandState(0);
+            }
+
+            if (currentStepIndex >= puzzleSteps.length) {
+              completePuzzle(now);
+            }
+          }
+        } else {
+          holdStart = 0;
+        }
+      }
+
+      // Automatically reset 30 seconds after completion.
+      if (allCompleted && completionTime !== 0 &&
+          now - completionTime >= 30000) {
+        currentStepIndex = 0;
+        allCompleted = false;
+        completionTime = 0;
+        holdStart = 0;
+        signalSent = false;
+        document.getElementById("solvedLetter").style.display = "none";
+        document.getElementById("reticle").style.display = "block";
+      }
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);
+    }
+  </script>
+</body>
+</html>
