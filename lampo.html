@@ -35,6 +35,13 @@
   let screenState = "normal"; // Can be "normal", "success", or "fail"
   let failStartTime = 0;
 
+  function mousePressed() {
+    // Wat er moet gebeuren als er ergens op het scherm geklikt wordt:
+        screenState = "normal";
+        collectedLetters = ""; // Reset de letters
+        fireCompleted = true; // Eventueel ook de vuur-status resetten
+}
+  
   // Define thing
   function thing() {
     oocsiThings.register('Lampo 🪔', 'lampo', ['toggle', 'dim', 'volume'], ['toggle']);
@@ -57,10 +64,10 @@
 
   function draw() {
     // --- 1. HANDLE SCREEN STATES (Success / Fail / Normal) ---
-    if (!toggle) {
-            fireCompleted = true;
-            console.log("Fire completed! Ready for wristbands.");
-    }
+    // if (!toggle) {
+    //         fireCompleted = true;
+    //         console.log("Fire completed! Ready for wristbands.");
+    // }
     
     if (fireCompleted == true && screenState == "normal") {
       let letter = msg.data.letter;
