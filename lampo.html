@@ -52,43 +52,33 @@
   function setup() {
     let canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvasContainer');
-
-    // --- OOCSI LISTENERS (Setup once) ---
-    
-    // Listen for the fire completion signal
-    OOCSI.subscribe("FIRE_CHANNEL", function(msg) {
-        if (msg.data.Fire_completed === true || msg.data.Fire_completed === "true") {
-            fireCompleted = true;
-            console.log("Fire completed! Ready for wristbands.");
         }
-    });
-
-    // Listen for Morse code letters from wristbands channel
-    OOCSI.subscribe("wristbands", function(msg) {
-        // Only collect letters if fire is completed and we are in normal view
-        if (fireCompleted && screenState === "normal") {
-            let letter = msg.data.letter; // Expecting {"letter": "H"} from the sender
-            
-            if (letter) {
-                collectedLetters += letter.toUpperCase();
-                console.log("Collected letters: " + collectedLetters);
-
-                // Check combination length once it reaches 4 letters
-                if (collectedLetters.length >= 4) {
-                    if (collectedLetters === "HELP") {
-                        screenState = "success"; // Triggers green screen
-                    } else {
-                        screenState = "fail";    // Triggers red screen
-                        failStartTime = millis(); 
-                    }
-                }
-            }
-        }
-    });
-  }
 
   function draw() {
     // --- 1. HANDLE SCREEN STATES (Success / Fail / Normal) ---
+    if (Fire_completed === true || Fire_completed === "true") {
+            fireCompleted = true;
+            console.log("Fire completed! Ready for wristbands.");
+    }
+    if (fireCompleted && screenState === "normal") {
+      let letter = msg.data.letter; // Expecting {"letter": "H"} from the sender
+            
+      if (letter) {
+        collectedLetters += letter.toUpperCase();
+        console.log("Collected letters: " + collectedLetters);
+
+        // Check combination length once it reaches 4 letters
+        if (collectedLetters.length >= 4) {
+            if (collectedLetters === "HELP") {
+                screenState = "success"; // Triggers green screen
+            } else {
+                screenState = "fail";    // Triggers red screen
+                failStartTime = millis(); 
+            }
+        }
+      }
+    }
+    
     if (screenState === "success") {
         background(0, 255, 0); // Bright Green
         fill(0);
