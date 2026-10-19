@@ -62,7 +62,7 @@
             console.log("Fire completed! Ready for wristbands.");
     }
     
-    if (fireCompleted && screenState === "normal") {
+    if (fireCompleted == true && screenState === "normal") {
       let letter = msg.data.letter; // Expecting {"letter": "H"} from the sender
             
       if (letter) {
