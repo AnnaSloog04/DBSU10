@@ -29,6 +29,7 @@
   let circleY = 350;
 
   // Game/Morse puzzle variables
+  let Fire_completed = false;
   let fireCompleted = false;
   let collectedLetters = "";
   let screenState = "normal"; // Can be "normal", "success", or "fail"
@@ -60,6 +61,7 @@
             fireCompleted = true;
             console.log("Fire completed! Ready for wristbands.");
     }
+    
     if (fireCompleted && screenState === "normal") {
       let letter = msg.data.letter; // Expecting {"letter": "H"} from the sender
             
