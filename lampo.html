@@ -35,12 +35,12 @@
   let screenState = "normal"; // Can be "normal", "success", or "fail"
   let failStartTime = 0;
 
-  function mousePressed() {
-    // Wat er moet gebeuren als er ergens op het scherm geklikt wordt:
-        screenState = "normal";
-        collectedLetters = ""; // Reset de letters
-        fireCompleted = true; // Eventueel ook de vuur-status resetten
-}
+//   function mousePressed() {
+//     // Wat er moet gebeuren als er ergens op het scherm geklikt wordt:
+//         screenState = "normal";
+//         collectedLetters = ""; // Reset de letters
+//         fireCompleted = true; // Eventueel ook de vuur-status resetten
+// }
   
   // Define thing
   function thing() {
@@ -169,6 +169,9 @@
     textAlign(CENTER, TOP);
     text("Morse Code: " + collectedLetters, width / 2, 30);
     }
+    function touchEnded() {
+    toggle(!toggle())
+  }
   }
 </script>
 </body></html>
