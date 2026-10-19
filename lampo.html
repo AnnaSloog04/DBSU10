@@ -57,21 +57,21 @@
 
   function draw() {
     // --- 1. HANDLE SCREEN STATES (Success / Fail / Normal) ---
-    if (Fire_completed == true || Fire_completed == "true") {
+    if (!toggle) {
             fireCompleted = true;
             console.log("Fire completed! Ready for wristbands.");
     }
     
     if (fireCompleted == true && screenState == "normal") {
-      let letter = msg.data.letter; // Expecting {"letter": "H"} from the sender
+      let letter = msg.data.letter;
             
       if (letter) {
         collectedLetters += letter.toUpperCase();
         console.log("Collected letters: " + collectedLetters);
 
         // Check combination length once it reaches 4 letters
-        if (collectedLetters.length >= 4) {
-            if (collectedLetters === "HELP") {
+        if (collectedLetters.length >= 16) {
+            if (collectedLetters === ".... . .-.. .--.") {
                 screenState = "success"; // Triggers green screen
             } else {
                 screenState = "fail";    // Triggers red screen
