@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://oocsi.id.tue.nl/assets/images/OOCSI_logo_no_text.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" type="text/css" href="https://oocsi.id.tue.nl/assets/css/pico.indigo.min.css">
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/p5.min.js"></script>
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/oocsi-web.js"></script>
+  <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/things/oocsi-things.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; background-color: #000; }
+  </style>
+</head>
+<body>
+<div id="canvasContainer"></div>
+<script type="text/javascript">
+
+  // Define your teamspace
+  oocsiThingsConfig = {
+    teamspace: "team-5"
+  };
+
+  // Thing variables
+  let toggle, dim, volume;
+
+  // Internal sound logic variables
+  let soundOffset = 0;
+  let TooLoud = false;
+
+  // Game/Morse puzzle variables
+  let fireCompleted = false;
+  let collectedLetters = "";
+  let screenState = "normal"; // Can be "normal", "success", or "fail"
+  let failStartTime = 0;
+  let msg = null; // Zorgt dat msg gedefinieerd is om crashes te voorkomen
+
+  // Define thing
+  function thing() {
+    oocsiThings.register('Lampo 🪔', 'lampo', ['toggle', 'dim', 'volume'], ['toggle']);
+
+    toggle = oocsiThings.data('toggle');
+    if (toggle) toggle(true);
+    
+    dim = oocsiThings.data('dim');
+    if (dim) dim(1.0);
+    
+    volume = oocsiThings.data('volume');
+    oocsiThings.connect('toktik', 'tick', 'dim');
+    oocsiThings.connect('voluma', 'volume', 'volume');
+  }
+
+  function setup() {
+    let canvas = createCanvas(windowWidth, windowHeight);
+    canvas.parent('canvasContainer');
+  }
+
+  function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+  }
+
+  function draw() {
+    // --- 1. HANDLE SCREEN STATES (Success / Fail / Normal) ---
+    if (fireCompleted && screenState === "normal") {
+      // Controleer of msg én msg.data wel bestaan voor we 'letter' uitlezen
+      let letter = (msg && msg.data) ? msg.data.letter : null;
+            
+      if (letter) {
+        collectedLetters += letter.toUpperCase();
+        console.log("Collected letters: " + collectedLetters);
+
+        if (collectedLetters.length >= 16) {
+          if (collectedLetters === ".... . .-.. .--.") {
+            screenState = "success"; 
+          } else {
+            screenState = "fail";    
+            failStartTime = millis(); 
+          }
+        }
+      }
+    }
+    
+    if (screenState === "success") {
+      background(0, 255, 0); // Bright Green
+      fill(0);
+      textSize(48);
+      textAlign(CENTER, CENTER);
+      text("SUCCESS! CORRECT CODE", width / 2, height / 2);
+      return; 
+    } 
+    else if (screenState === "fail") {
+      background(255, 0, 0); // Bright Red
+      fill(255);
+      textSize(48);
+      textAlign(CENTER, CENTER);
+      text("WRONG COMBINATION!", width / 2, height / 2);
+
+      if (millis() - failStartTime > 3000) {
+        screenState = "normal";
+        collectedLetters = ""; 
+      }
+      return;
+    } 
+    else {
+      background(0); // Normal dark background
+    }
+
+    // --- 2. OOCSI THING DATA LOGIC ---
+    let ON = (typeof toggle === 'function' && toggle() !== undefined) ? toggle() : true;
+    let currentDim = (typeof dim === 'function' && dim() !== undefined && dim() !== null) ? dim() : 1.0;
+    let currentVol = (typeof volume === 'function' && volume() !== undefined && volume() !== null) ? volume() : 0.0;
+
+    let Limit = 0.6;  
+
+    if (currentVol > Limit) {
+      if (!TooLoud) {
+        soundOffset += 0.02; 
+        TooLoud = true;
+      }
+    } else {
+      TooLoud = false;
+    }
+
+    // --- 3. GRAPHICS ---
+    if (!fireCompleted) {
+      noStroke();
+      let diameter = height - height / 4;
+      
+      // RIGHT SIDE
+      fill(255);
+      circle((3 * width) / 4, height / 2, diameter);
+
+      let circleX_R = map(currentDim, 1, -1, (3 * width) / 4 - diameter, (3 * width) / 4);
+      fill(0);
+      circle(circleX_R, height / 2, diameter);
+      
+      // LEFT SIDE
+      fill(255);
+      circle(width / 4, height / 2, diameter);
+
+      let circleX_L = map(currentDim, 1, -1, width / 4 - diameter, width / 4);
+      fill(0);
+      circle(circleX_L, height / 2, diameter);
+
+    } else {
+      // --- 4. DISPLAY MORSE LETTERS ON SCREEN ---
+      noStroke();
+      let diameter = height - height / 4;
+      fill(255);
+      circle(width / 2, height / 2, diameter);
+
+      let circleX_R = map(currentDim, 1, -1, width / 2 - diameter, width / 2);
+      fill(0);
+      circle(circleX_R, height / 2, diameter);
+        
+      fill(255);
+      textSize(32);
+      textAlign(CENTER, TOP);
+      text("Morse Code: " + collectedLetters, width / 2, 30);
+    }
+  }
+
+  // Werkt nu op ZOWEL muisklikken op de laptop als tikken op mobiel
+  function mousePressed() {
+    fireCompleted = true;
+    if (typeof oocsiThings !== 'undefined' && oocsiThings.activity) {
+      oocsiThings.activity();
+    }
+  }
+</script>
+</body>
+</html>
