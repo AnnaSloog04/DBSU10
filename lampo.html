@@ -1,4 +1,5 @@
-<html><head>
+<html>
+<head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#000000">
@@ -10,7 +11,10 @@
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/p5.min.js"></script>
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/oocsi-web.js"></script>
   <script type="text/javascript" src="https://oocsi.id.tue.nl/assets/js/things/oocsi-things.min.js"></script>
-<style></style></head>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; background-color: #020802; }
+  </style>
+</head>
 <body>
 <div id="canvasContainer"></div>
 <script type="text/javascript">
@@ -26,32 +30,34 @@
   // Internal sound logic variables
   let soundOffset = 0;
   let TooLoud = false;
-  let circleY = 350;
 
   // Game/Morse puzzle variables
-  let Fire_completed = false;
   let fireCompleted = false;
-  let collectedLetters = "";
-  let screenState = "normal"; // Can be "normal", "success", or "fail"
+  let collectedLetters = ""; // Hier komt uiteindelijk "HELP" of een ander woord te staan
+  let screenState = "normal"; 
   let failStartTime = 0;
 
-//   function mousePressed() {
-//     // Wat er moet gebeuren als er ergens op het scherm geklikt wordt:
-//         screenState = "normal";
-//         collectedLetters = ""; // Reset de letters
-//         fireCompleted = true; // Eventueel ook de vuur-status resetten
-// }
-  
-  // Define thing
+  // Morse vertaal-tabel (Morse naar Letter)
+  const morseMap = {
+    ".-": "A", "-...": "B", "-.-.": "C", "-..": "D", ".": "E",
+    "..-.": "F", "--.": "G", "....": "H", "..": "I", ".---": "J",
+    "-.-": "K", ".-..": "L", "--": "M", "-.": "N", "---": "O",
+    ".--.": "P", "--.-": "Q", ".-.": "R", "...": "S", "-": "T",
+    "..-": "U", "...-": "V", ".--": "W", "-..-": "X", "-.--": "Y", "--..": "Z"
+  };
+
+  let currentMorse = "";   
+  let lastInputTime =   0;   
+
+  // Jungle silhouet elementen voor achtergrond/voorgrond
+  let stars = [];
+
   function thing() {
     oocsiThings.register('Lampo 🪔', 'lampo', ['toggle', 'dim', 'volume'], ['toggle']);
-
     toggle = oocsiThings.data('toggle');
-    toggle(true);
-    
+    if (toggle) toggle(true);
     dim = oocsiThings.data('dim');
-    dim(1.0);
-    
+    if (dim) dim(1.0);
     volume = oocsiThings.data('volume');
     oocsiThings.connect('toktik', 'tick', 'dim');
     oocsiThings.connect('voluma', 'volume', 'volume');
@@ -60,65 +66,74 @@
   function setup() {
     let canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvasContainer');
-        }
+
+    // Genereer vaste sterren voor de nachthemel
+    for (let i = 0; i < 60; i++) {
+      stars.push({
+        x: random(width),
+        y: random(height * 0.6),
+        size: random(1, 2.5),
+        alpha: random(100, 250)
+      });
+    }
+  }
+
+  function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+  }
 
   function draw() {
-    // --- 1. HANDLE SCREEN STATES (Success / Fail / Normal) ---
-    // if (!toggle) {
-    //         fireCompleted = true;
-    //         console.log("Fire completed! Ready for wristbands.");
-    // }
-    
-    if (fireCompleted == true && screenState == "normal") {
-      let letter = msg.data.letter;
-            
-      if (letter) {
-        collectedLetters += letter.toUpperCase();
-        console.log("Collected letters: " + collectedLetters);
-
-        // Check combination length once it reaches 4 letters
-        if (collectedLetters.length >= 16) {
-            if (collectedLetters === ".... . .-.. .--.") {
-                screenState = "success"; // Triggers green screen
-            } else {
-                screenState = "fail";    // Triggers red screen
-                failStartTime = millis(); 
-            }
+    // --- 1. AUTOMATISCHE MORSE PAUZE-CHECK ---
+    if (currentMorse.length > 0 && millis() - lastInputTime > 900) {
+      if (morseMap[currentMorse]) {
+        let translatedLetter = morseMap[currentMorse];
+        collectedLetters += translatedLetter;
+        console.log("Vertaald naar letter: " + translatedLetter + " | Woord tot nu toe: " + collectedLetters);
+        
+        if (collectedLetters.length >= 4) {
+          if (collectedLetters === "HELP") {
+            screenState = "success"; 
+          } else {
+            screenState = "fail";    
+            failStartTime = millis(); 
+          }
         }
+      } else {
+        console.log("Onbekende morse combinatie: " + currentMorse);
       }
+      currentMorse = ""; 
     }
-    
+
+    // --- 2. HANDLE SCREEN STATES (Success / Fail / Normal) ---
     if (screenState === "success") {
-        background(0, 255, 0); // Bright Green
-        fill(0);
-        textSize(48);
-        textAlign(CENTER, CENTER);
-        text("SUCCESS! CORRECT CODE", width / 2, height / 2);
-        return; 
+      background(0, 50, 0); 
+      fill(100, 255, 100);
+      textSize(42);
+      textAlign(CENTER, CENTER);
+      text("NIGHT-OPS: HELP IS ON THE WAY!", width / 2, height / 2);
+      return; 
     } 
     else if (screenState === "fail") {
-        background(255, 0, 0); // Bright Red
-        fill(255);
-        textSize(48);
-        textAlign(CENTER, CENTER);
-        text("WRONG COMBINATION!", width / 2, height / 2);
+      background(60, 0, 0); 
+      fill(255, 100, 100);
+      textSize(42);
+      textAlign(CENTER, CENTER);
+      text("SIGNAL ERROR: WRONG COMBINATION", width / 2, height / 2);
 
-        // Reset back to normal puzzle screen after 3 seconds (3000 ms)
-        if (millis() - failStartTime > 3000) {
-            screenState = "normal";
-            collectedLetters = ""; // Clear letters for retry
-        }
-        return;
+      if (millis() - failStartTime > 3000) {
+        screenState = "normal";
+        collectedLetters = ""; 
+      }
+      return;
     } 
     else {
-        background(0); // Normal dark background
+      // Nachtelijke jungle achtergrondkleur (diep donkergroen/zwart)
+      background(2, 10, 5); 
     }
 
-    // --- 2. OOCSI THING DATA LOGIC ---
-    let ON = (typeof toggle === 'function' && toggle() !== undefined) ? toggle() : true;
+    // --- 3. OOCSI THING DATA LOGIC ---
     let currentDim = (typeof dim === 'function' && dim() !== undefined && dim() !== null) ? dim() : 1.0;
     let currentVol = (typeof volume === 'function' && volume() !== undefined && volume() !== null) ? volume() : 0.0;
-
     let Limit = 0.6;  
 
     if (currentVol > Limit) {
@@ -130,49 +145,157 @@
       TooLoud = false;
     }
 
-    let endDim = currentDim - soundOffset
-
-    // --- 3. GRAPHICS  ---
-    if (!fireCompleted){
+    // --- 4. GRAPHICS: NIGHT-OPS JUNGLE & MOON ---
     noStroke();
-    let diameter = height - height/4;
-    
-    // RIGHT SIDE
-    fill(255);
-    circle((3 * width) / 4, height / 2, diameter);
 
-    let circleX_R = map(currentDim, 1, -1, (3 * width) / 4 - diameter, (3 * width) / 4);
-    fill(0);
-    circle(circleX_R, height / 2, diameter);
-    
-    // LEFT SIDE
-    fill(255);
-    circle(width / 4, height / 2, diameter);
+    // A. Sterrenhemel
+    for (let s of stars) {
+      fill(200, 220, 200, s.alpha);
+      ellipse(s.x, s.y, s.size);
+    }
 
-    let circleX_L = map(currentDim, 1, -1, width / 4 - diameter, width / 4);
-    fill(0);
-    circle(circleX_L, height / 2, diameter);
+    // B. Jungle bladeren / silhouetten op de achtergrond (horizon)
+    fill(4, 18, 8);
+    beginShape();
+    vertex(0, height);
+    vertex(0, height * 0.75);
+    for (let x = 0; x <= width; x += 40) {
+      let hVar = sin(x * 0.01 + soundOffset) * 30;
+      vertex(x, height * 0.72 + hVar);
+    }
+    vertex(width, height);
+    endShape(CLOSE);
 
-    // --- 4. DISPLAY MORSE LETTERS ON SCREEN ---
-    }else{
-      noStroke();
-      let diameter = height - height/4;
-      fill(255);
-      circle(width/2, height / 2, diameter);
+    // C. De Maan (of verrekijker / night-ops visie)
+    let diameter = min(width, height) * 0.55;
 
-      let circleX_R = map(currentDim, 1, -1, width/2 - diameter, width/2);
-      fill(0);
-      circle(circleX_R, height / 2, diameter);
+    if (!fireCompleted) {
+      // Twee nachtkijker-lenzen (links en rechts)
+      drawNightOpsScope((3 * width) / 4, height / 2, diameter, currentDim);
+      drawNightOpsScope(width / 4, height / 2, diameter, currentDim);
+
+      // Subtiele instructietekst onderin
+      fill(50, 120, 70);
+      textSize(16);
+      textAlign(CENTER, BOTTOM);
+      text("[ KLIK OM OVER TE SCHAKELEN NAAR MORSE SEINTAFEL ]", width / 2, height - 20);
+
+    } else {
+      // Enkele gecentreerde kijker voor Morse invoer
+      drawNightOpsScope(width / 2, height / 2, diameter, currentDim);
+        
+      // Morse status overlay
+      fill(100, 255, 150);
+      textSize(24);
+      textAlign(CENTER, TOP);
+      text("RADIO TRANSCEIVER - MORSE: " + collectedLetters + currentMorse, width / 2, 40);
       
-    fill(255);
-    textSize(32);
-    textAlign(CENTER, TOP);
-    text("Morse Code: " + collectedLetters, width / 2, 30);
+      textSize(14);
+      fill(70, 180, 100);
+      text("Gebruik '.' en '-' om te seinen. [Backspace] om te wissen.", width / 2, 75);
+    }
+
+    // D. Voorgrond jungle bladeren (silhouetten die over het scherm vallen voor diepte-effect)
+    drawJungleForeground();
+  }
+
+  // Functie om een nachtkijker-cirkel met maan en verduistering te tekenen
+  function drawNightOpsScope(xPos, yPos, diam, dimVal) {
+    push();
+    // Buitenste ring van de verrekijker (nacht-ops groenachtig/donker metaal)
+    fill(10, 25, 15);
+    stroke(25, 60, 35);
+    strokeWeight(6);
+    ellipse(xPos, yPos, diam + 15);
+
+    // Binnenkant / Clipping voor de maan
+    noStroke();
+    fill(220, 235, 200); // Glibberige/groene maanachtige gloed
+    ellipse(xPos, yPos, diam);
+
+    // Maanraters / kraters textuur binnen de maan
+    fill(180, 200, 160, 150);
+    ellipse(xPos - diam * 0.15, yPos - diam * 0.2, diam * 0.25);
+    ellipse(xPos + diam * 0.2, yPos + diam * 0.15, diam * 0.35);
+    ellipse(xPos - diam * 0.1, yPos + diam * 0.25, diam * 0.2);
+
+    // Schaduw / Dim effect over de maan (gebaseerd op je OOCSI dim-variabele)
+    let shadowOffset = map(dimVal, 1, -1, -diam, diam);
+    fill(2, 12, 5); // Donkere schaduw die over de maan schuift
+    // Teken een cirkel die verschuift op basis van 'dim'
+    ellipse(xPos + shadowOffset * 0.5, yPos, diam * 1.05);
+
+    // Nacht-ops dradenkruis (crosshair)
+    stroke(0, 180, 80, 180);
+    strokeWeight(1.5);
+    line(xPos - diam * 0.4, yPos, xPos + diam * 0.4, yPos);
+    line(xPos, yPos - diam * 0.4, xPos, yPos + diam * 0.4);
+    noFill();
+    ellipse(xPos, yPos, diam * 0.3);
+
+    // Donkere randen vignette effect rondom de lens
+    noFill();
+    stroke(2, 10, 5);
+    strokeWeight(20);
+    ellipse(xPos, yPos, diam + 10);
+    pop();
+  }
+
+  // Decoratieve jungletakken en bladeren aan de randen voor 'in de jungle' gevoel
+  function drawJungleForeground() {
+    noStroke();
+    fill(1, 6, 2);
+
+    // Grote bladeren aan de linkerkant
+    beginShape();
+    vertex(0, 0);
+    vertex(200, 0);
+    vertex(80, height * 0.4);
+    vertex(0, height * 0.3);
+    endShape(CLOSE);
+
+    beginShape();
+    vertex(0, height);
+    vertex(0, height * 0.7);
+    vertex(150, height * 0.85);
+    vertex(50, height);
+    endShape(CLOSE);
+
+    // Grote bladeren aan de rechterkant
+    beginShape();
+    vertex(width, 0);
+    vertex(width - 180, 0);
+    vertex(width - 60, height * 0.35);
+    vertex(width, height * 0.25);
+    endShape(CLOSE);
+
+    beginShape();
+    vertex(width, height);
+    vertex(width, height * 0.65);
+    vertex(width - 200, height * 0.8);
+    vertex(width - 50, height);
+    endShape(CLOSE);
+  }
+
+  function mousePressed() {
+    if (!fireCompleted) {
+      fireCompleted = true;
     }
   }
-      function touchEnded() {
-        fireCompleted = true
-        oocsiThings.activity();
+
+  // Toetsenbord invoer voor punten (.) en streepjes (-)
+  function keyPressed() {
+    if (fireCompleted && screenState === "normal") {
+      if (key === '.' || key === '-') {
+        currentMorse += key;       
+        lastInputTime = millis();  
+        console.log("MORSE CODE: " + currentMorse);
+      } 
+      else if (keyCode === BACKSPACE) {
+        currentMorse = "";         
+      }
+    }
   }
 </script>
-</body></html>
+</body>
+</html>
