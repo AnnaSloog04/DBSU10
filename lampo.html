@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -33,7 +34,7 @@
 
   // Game/Morse puzzle variables
   let fireCompleted = false;
-  let collectedLetters = ""; // Hier komt uiteindelijk "HELP" of een ander woord te staan
+  let collectedLetters = ""; 
   let screenState = "normal"; 
   let failStartTime = 0;
 
@@ -47,7 +48,7 @@
   };
 
   let currentMorse = "";   
-  let lastInputTime =   0;   
+  let lastInputTime = 0;   
 
   // Jungle silhouet elementen voor achtergrond/voorgrond
   let stars = [];
@@ -67,13 +68,13 @@
     let canvas = createCanvas(windowWidth, windowHeight);
     canvas.parent('canvasContainer');
 
-    // Genereer vaste sterren voor de nachthemel
-    for (let i = 0; i < 60; i++) {
+    // Genereer duidelijk zichtbare sterren voor de nachthemel
+    for (let i = 0; i < 70; i++) {
       stars.push({
         x: random(width),
-        y: random(height * 0.6),
-        size: random(1, 2.5),
-        alpha: random(100, 250)
+        y: random(height * 0.7),
+        size: random(1.5, 3.5),
+        alpha: random(150, 255)
       });
     }
   }
@@ -127,7 +128,6 @@
       return;
     } 
     else {
-      // Nachtelijke jungle achtergrondkleur (diep donkergroen/zwart)
       background(2, 10, 5); 
     }
 
@@ -148,13 +148,13 @@
     // --- 4. GRAPHICS: NIGHT-OPS JUNGLE & MOON ---
     noStroke();
 
-    // A. Sterrenhemel
+    // A. Goed zichtbare sterrenhemel
     for (let s of stars) {
-      fill(200, 220, 200, s.alpha);
+      fill(220, 255, 220, s.alpha);
       ellipse(s.x, s.y, s.size);
     }
 
-    // B. Jungle bladeren / silhouetten op de achtergrond (horizon)
+    // B. Jungle bladeren / silhouetten op de achtergrond
     fill(4, 18, 8);
     beginShape();
     vertex(0, height);
@@ -166,87 +166,59 @@
     vertex(width, height);
     endShape(CLOSE);
 
-    // C. De Maan (of verrekijker / night-ops visie)
-    let diameter = min(width, height) * 0.55;
+    // C. Grafische elementen (Maan / Lenzen)
+    let diameter = height - height / 4;
 
     if (!fireCompleted) {
-      // Twee nachtkijker-lenzen (links en rechts)
-      drawNightOpsScope((3 * width) / 4, height / 2, diameter, currentDim);
-      drawNightOpsScope(width / 4, height / 2, diameter, currentDim);
-
-      // Subtiele instructietekst onderin
-      fill(50, 120, 70);
-      textSize(16);
-      textAlign(CENTER, BOTTOM);
-      text("[ KLIK OM OVER TE SCHAKELEN NAAR MORSE SEINTAFEL ]", width / 2, height - 20);
-
+      // Rechter en linker lenzen met herstelde dim-logica (zonder dradenkruis)
+      drawNightOpsMoon((3 * width) / 4, height / 2, diameter, currentDim);
+      drawNightOpsMoon(width / 4, height / 2, diameter, currentDim);
     } else {
-      // Enkele gecentreerde kijker voor Morse invoer
-      drawNightOpsScope(width / 2, height / 2, diameter, currentDim);
+      // Morse invoer scherm (enkele lens)
+      drawNightOpsMoon(width / 2, height / 2, diameter, currentDim);
         
-      // Morse status overlay
       fill(100, 255, 150);
-      textSize(24);
+      textSize(32);
       textAlign(CENTER, TOP);
-      text("RADIO TRANSCEIVER - MORSE: " + collectedLetters + currentMorse, width / 2, 40);
-      
-      textSize(14);
-      fill(70, 180, 100);
-      text("Gebruik '.' en '-' om te seinen. [Backspace] om te wissen.", width / 2, 75);
+      text("MORSE: " + collectedLetters + currentMorse, width / 2, 50);
     }
 
-    // D. Voorgrond jungle bladeren (silhouetten die over het scherm vallen voor diepte-effect)
+    // D. Voorgrond jungle bladeren
     drawJungleForeground();
   }
 
-  // Functie om een nachtkijker-cirkel met maan en verduistering te tekenen
-  function drawNightOpsScope(xPos, yPos, diam, dimVal) {
+  // Functie voor de maan met de originele OOCSI dim-logica (zonder dradenkruis)
+  function drawNightOpsMoon(xPos, yPos, diameter, currentDim) {
     push();
-    // Buitenste ring van de verrekijker (nacht-ops groenachtig/donker metaal)
+    // Buitenste kijkerring
     fill(10, 25, 15);
     stroke(25, 60, 35);
-    strokeWeight(6);
-    ellipse(xPos, yPos, diam + 15);
+    strokeWeight(4);
+    ellipse(xPos, yPos, diameter + 10);
 
-    // Binnenkant / Clipping voor de maan
+    // Witte achtergrond (maan)
     noStroke();
-    fill(220, 235, 200); // Glibberige/groene maanachtige gloed
-    ellipse(xPos, yPos, diam);
+    fill(220, 240, 210);
+    circle(xPos, yPos, diameter);
 
-    // Maanraters / kraters textuur binnen de maan
-    fill(180, 200, 160, 150);
-    ellipse(xPos - diam * 0.15, yPos - diam * 0.2, diam * 0.25);
-    ellipse(xPos + diam * 0.2, yPos + diam * 0.15, diam * 0.35);
-    ellipse(xPos - diam * 0.1, yPos + diam * 0.25, diam * 0.2);
+    // Zwarte schuivende cirkel op basis van de originele dim-logica
+    let circleX = map(currentDim, 1, -1, xPos - diameter, xPos);
+    fill(2, 12, 5);
+    circle(circleX, yPos, diameter);
 
-    // Schaduw / Dim effect over de maan (gebaseerd op je OOCSI dim-variabele)
-    let shadowOffset = map(dimVal, 1, -1, -diam, diam);
-    fill(2, 12, 5); // Donkere schaduw die over de maan schuift
-    // Teken een cirkel die verschuift op basis van 'dim'
-    ellipse(xPos + shadowOffset * 0.5, yPos, diam * 1.05);
-
-    // Nacht-ops dradenkruis (crosshair)
-    stroke(0, 180, 80, 180);
-    strokeWeight(1.5);
-    line(xPos - diam * 0.4, yPos, xPos + diam * 0.4, yPos);
-    line(xPos, yPos - diam * 0.4, xPos, yPos + diam * 0.4);
-    noFill();
-    ellipse(xPos, yPos, diam * 0.3);
-
-    // Donkere randen vignette effect rondom de lens
+    // Vignette / donkere rand rond de lens
     noFill();
     stroke(2, 10, 5);
-    strokeWeight(20);
-    ellipse(xPos, yPos, diam + 10);
+    strokeWeight(15);
+    ellipse(xPos, yPos, diameter + 5);
     pop();
   }
 
-  // Decoratieve jungletakken en bladeren aan de randen voor 'in de jungle' gevoel
+  // Decoratieve jungletakken aan de zijkanten
   function drawJungleForeground() {
     noStroke();
     fill(1, 6, 2);
 
-    // Grote bladeren aan de linkerkant
     beginShape();
     vertex(0, 0);
     vertex(200, 0);
@@ -261,7 +233,6 @@
     vertex(50, height);
     endShape(CLOSE);
 
-    // Grote bladeren aan de rechterkant
     beginShape();
     vertex(width, 0);
     vertex(width - 180, 0);
@@ -283,7 +254,6 @@
     }
   }
 
-  // Toetsenbord invoer voor punten (.) en streepjes (-)
   function keyPressed() {
     if (fireCompleted && screenState === "normal") {
       if (key === '.' || key === '-') {
