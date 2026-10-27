@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
@@ -34,13 +33,12 @@
 
   // Game/Morse puzzle variables
   let fireCompleted = false;
-  let collectedLetters = ""; // Hier komt uiteindelijk "HELP" of een ander woord te staan
+  let collectedLetters = ""; 
   let screenState = "normal"; 
   let failStartTime = 0;
 
-  // Morse vertaal-tabel (Morse naar Letter)
+  // Morse map to translate dots and dashes
   const morseMap = {
-    // Letters
     ".-": "A",
     "-...": "B",
     "-.-.": "C",
@@ -69,8 +67,8 @@
     "--..": "Z"
   };
 
-  let currentMorse = "";   // Tijdelijke opslag voor de punten/streepjes van één letter
-  let lastInputTime = 0;   // Houdt bij wanneer je voor het laatst hebt getypt
+  let currentMorse = "";   // variable to save dots and dashes
+  let lastInputTime = 0;  
 
   function thing() {
     oocsiThings.register('Lampo 🪔', 'lampo', ['toggle', 'dim', 'volume'], ['toggle']);
@@ -93,15 +91,12 @@
   }
 
   function draw() {
-    // --- 1. AUTOMATISCHE MORSE PAUZE-CHECK ---
-    // Als er punten/streepjes zijn getypt EN je wacht langer dan 900ms (0.9 seconde)
+    // Morse code check input for letters
     if (currentMorse.length > 0 && millis() - lastInputTime > 900) {
       if (morseMap[currentMorse]) {
         let translatedLetter = morseMap[currentMorse];
         collectedLetters += translatedLetter;
-        console.log("Vertaald naar letter: " + translatedLetter + " | Woord tot nu toe: " + collectedLetters);
-        
-        // Controleer of het woord compleet is (bijv. "HELP" is 4 letters)
+
         if (collectedLetters.length >= 4) {
           if (collectedLetters === "HELP") {
             screenState = "success"; 
@@ -111,14 +106,14 @@
           }
         }
       } else {
-        console.log("Onbekende morse combinatie: " + currentMorse);
+        console.log("Unknown morse combination");
       }
-      currentMorse = ""; // Reset de tijdelijke morse-code voor de volgende letter
+      currentMorse = ""; // Reset the morse code check for next letter
     }
 
-    // --- 2. HANDLE SCREEN STATES (Success / Fail / Normal) ---
+    // Screen state check if the solution is right or wrong
     if (screenState === "success") {
-      background(0, 255, 0); // Groen
+      background(0, 255, 0);
       fill(0);
       textSize(48);
       textAlign(CENTER, CENTER);
@@ -126,7 +121,7 @@
       return; 
     } 
     else if (screenState === "fail") {
-      background(255, 0, 0); // Rood
+      background(255, 0, 0);
       fill(255);
       textSize(48);
       textAlign(CENTER, CENTER);
@@ -142,11 +137,12 @@
       background(0); 
     }
 
-    // --- 3. OOCSI THING DATA LOGIC ---
+    // Timer data check with data from Toktik and Voluma
     let currentDim = (typeof dim === 'function' && dim() !== undefined && dim() !== null) ? dim() : 1.0;
     let currentVol = (typeof volume === 'function' && volume() !== undefined && volume() !== null) ? volume() : 0.0;
     let Limit = 0.6;  
 
+    // Check if the volume from Voluma is too high
     if (currentVol > Limit) {
       if (!TooLoud) {
         soundOffset += 0.02; 
@@ -156,12 +152,12 @@
       TooLoud = false;
     }
 
-    // --- 4. GRAPHICS ---
+    // Drawing of the Lampo and visualization of the timer
     noStroke();
     let diameter = height - height / 4;
 
     if (!fireCompleted) {
-      // Rechter en linker cirkels (normaal scherm)
+      // Two circles for the split room part
       fill(255);
       circle((3 * width) / 4, height / 2, diameter);
       let circleX_R = map(currentDim, 1, -1, (3 * width) / 4 - diameter, (3 * width) / 4);
@@ -175,7 +171,7 @@
       circle(circleX_L, height / 2, diameter);
 
     } else {
-      // Morse invoer scherm
+      // Morse puzzle screen with one Lampo in the middle and input for dots and dashes
       fill(255);
       circle(width / 2, height / 2, diameter);
       let circleX_R = map(currentDim, 1, -1, width / 2 - diameter, width / 2);
@@ -185,7 +181,7 @@
       fill(255);
       textSize(32);
       textAlign(CENTER, TOP);
-      // Toont live wat je aan het intypen bent én wat er al vertaald is
+      // Shows dots, dashes and translated letters
       text("MORSE: " + collectedLetters + currentMorse, width / 2, 50);
     }
   }
@@ -196,16 +192,16 @@
     }
   }
 
-  // Toetsenbord invoer voor punten (.) en streepjes (-)
+  // Manual input for dots and dashes
   function keyPressed() {
     if (fireCompleted && screenState === "normal") {
       if (key === '.' || key === '-') {
-        currentMorse += key;       // Voeg punt of streep toe aan de huidige letter
-        lastInputTime = millis();  // Reset de pauze-timer
+        currentMorse += key;       
+        lastInputTime = millis();  
         console.log("MORSE CODE: " + currentMorse);
       } 
       else if (keyCode === BACKSPACE) {
-        currentMorse = "";         // Wis de huidige onvoltooide letter bij Backspace
+        currentMorse = "";         // Remove mistakes if necessary
       }
     }
   }
